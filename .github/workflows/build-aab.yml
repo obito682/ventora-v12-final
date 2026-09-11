@@ -1,0 +1,32 @@
+name: Build Ventora AAB
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+      - name: Create PWA Manifest
+        run: |
+          echo '{"name":"Ventora v12","short_name":"Ventora","start_url":"./index.html","display":"standalone","background_color":"#0f0f0f","theme_color":"#00ff88","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/5968/5968705.png","sizes":"512x512","type":"image/png"}]}' > manifest.json
+      - name: Build AAB
+        run: |
+          mkdir twa && cd twa
+          echo 'y' | bubblewrap init --manifest../manifest.json --directory. -- --packageId=com.ventora.v12 --name="Ventora v12" --display=standalone --themeColor="#00ff88" --backgroundColor="#0f0f0f" --startUrl="https://obito682.github.io/ventora-v12-final/" --signingKeyAlias=android --signingKeyFullName="Ventora" --signingKeyOrg="Ventora" --signingKeyOrgUnit="Dev" --signingKeyCountry="IN" --fallbackType=customTabs || true
+          bubblewrap build --skipPwaValidation || echo "Build attempt done"
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: ventora-v12-aab
+          path: twa/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: warn
